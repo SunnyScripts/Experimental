@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="icon" type="image/png" href="beaker32.png" sizes="32x32">
+    <meta charset="UTF-8">
+    <title>Experimental</title>
+</head>
+<style>
+    body
+    {
+        background-color: white;
+        margin: 0;
+    }
+    div.header-buttons
+    {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: white;
+        padding: 10px 0;
+    }
+    span.header-buttons
+    {
+        padding: 20px 60px;
+        font-size: 20px;
+        background-color: grey;
+    }
+    span.header-buttons:hover
+    {
+        background-color: dimgray;
+        color: white;
+        cursor: pointer;
+    }
+    span.header-buttons:active
+    {
+        background-color: darkgray;
+        cursor: pointer;
+    }
+</style>
+<body>
+    <div class="header-buttons">
+        <span class="header-buttons" onclick="voronoi()">Voronoi</span>
+        <span class="header-buttons" onclick="terrain()">Terrain</span>
+        <span class="header-buttons">Neural Network</span>
+    </div>
+    <canvas id="webGLCanvas" width="1440" height="800" style="width: 1440px; height: 800px; background-color: gray;" >-</canvas>
+<!--<div>Icons made by <a href="https://www.freepik.com/" title="Freepik">Freepik</a> from <a href="https://www.flaticon.com/" 			    title="Flaticon">www.flaticon.com</a> is licensed by <a href="http://creativecommons.org/licenses/by/3.0/" 			    title="Creative Commons BY 3.0" target="_blank">CC 3.0 BY</a></div>-->
+</body>
+<script type="module">
+    import {compileShader, createProgram, initBasicVertexBuffer} from "./Shader_Program_Utilities.js";
+    import {basicVertexShader, voronoiMain} from './Shader_Source.js';
+
+    window.voronoi = function()
+    {
+        const canvas = document.querySelector("#webGLCanvas");
+        const context = canvas.getContext("webgl");
+
+        // canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+
+        let vertexShader = compileShader(context, context.VERTEX_SHADER, basicVertexShader);
+        let voronoiFragShader = compileShader(context, context.FRAGMENT_SHADER, voronoiMain);
+        let voronoiProgram = createProgram(context, vertexShader, voronoiFragShader);
+        context.useProgram(voronoiProgram);
+
+        let vertexBufferParams = initBasicVertexBuffer(context, context.getAttribLocation(voronoiProgram, 'vertexPosition'));
+
+        context.uniform2f(context.getUniformLocation(voronoiProgram, 'resolution'), window.innerWidth, window.innerHeight);
+
+        requestAnimationFrame(update);
+
+        function update(time)
+        {
+            context.uniform1f(context.getUniformLocation(voronoiProgram, 'time'), time*.001);
+
+            context.clear(context.COLOR_BUFFER_BIT);
+            context.drawArrays(context.TRIANGLE_STRIP,0 ,vertexBufferParams.size * .5);
+
+            requestAnimationFrame(update);
+        }
+    };
+
+    import {simpleTerrain} from "./Simple_Terrain.js";
+    window.terrain = simpleTerrain();
+</script>
+</html>
